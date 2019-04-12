@@ -36,7 +36,7 @@ class DogstatsdCollector(object):
             metric_type
         ).setdefault(
             metric,
-            defaultdict(int)
+            defaultdict(float)
         )
         metric_dict[key] += value
 
