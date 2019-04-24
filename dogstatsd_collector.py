@@ -7,7 +7,11 @@ class DogstatsdCollector(object):
     def __init__(self, dogstatsd):
         self.dogstatsd = dogstatsd
         for metric in self.SUPPORTED_DOGSTATSD_METRICS:
-            setattr(self, '_{}s'.format(metric), {})
+            setattr(
+                self,
+                '_{}s'.format(metric),
+                defaultdict(lambda: defaultdict(float))
+            )
 
     def increment(self, metric, value=1, tags=None):
         self._record_metric('increment', metric, value, tags)
@@ -22,23 +26,15 @@ class DogstatsdCollector(object):
     def _flush_metric(self, metric_type):
         container = self._get_metric_container(metric_type)
         for metric, series in container.items():
+            dogstatsd_method = getattr(self.dogstatsd, metric_type)
             for series, value in series.items():
-                getattr(
-                    self.dogstatsd,
-                    metric_type
-                )(metric, value, tags=sorted(list(series)))
+                dogstatsd_method(metric, value, tags=sorted(list(series)))
 
     def _record_metric(self, metric_type, metric, value, tags=None):
         if tags is None:
             tags = []
         key = frozenset(tags)
-        metric_dict = self._get_metric_container(
-            metric_type
-        ).setdefault(
-            metric,
-            defaultdict(float)
-        )
-        metric_dict[key] += value
+        self._get_metric_container(metric_type)[metric][key] += value
 
     def _get_metric_container(self, metric_type):
         attr = '_{}s'.format(metric_type)
