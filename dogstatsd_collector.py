@@ -25,8 +25,8 @@ class DogstatsdCollector(object):
 
     def _flush_metric(self, metric_type):
         container = self._get_metric_container(metric_type)
+        dogstatsd_method = getattr(self.dogstatsd, metric_type)
         for metric, series in container.items():
-            dogstatsd_method = getattr(self.dogstatsd, metric_type)
             for series, value in series.items():
                 dogstatsd_method(metric, value, tags=sorted(list(series)))
 
