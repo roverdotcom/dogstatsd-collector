@@ -7,7 +7,7 @@ class DogstatsdCollector(object):
     metrics in-memory and then emits them when flush() is called. Each series
     (metric and all combination of tag key-value pairs) is emitted separately.
 
-    :type dogstatsd: datadog.DogStatsD
+    :type dogstatsd: datadog.dogstatsd.base.DogStatsD
     :param dogstatsd: The DogStatsD object to use for emitting metrics.
     """
 
@@ -25,20 +25,20 @@ class DogstatsdCollector(object):
 
     def increment(self, metric, value=1, tags=None):
         """
-        Track a DogStatsD counter metric. See <TODO>
+        Track a DogStatsD counter metric.
         """
         self._record_metric('increment', metric, value, tags)
 
     def histogram(self, metric, value, tags=None):
         """
-        Track a DogStatsD histogram metric. See <TODO>
+        Track a DogStatsD histogram metric.
         """
         self._record_metric('histogram', metric, value, tags)
 
     def flush(self):
         """
         Flush all metrics, emitting each metric once per series (combination of
-        tag key-valuepairs).
+        tag key-value pairs).
         """
         for metric_type in self.SUPPORTED_DOGSTATSD_METRICS:
             self._flush_metric(metric_type)
