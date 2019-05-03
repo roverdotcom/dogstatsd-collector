@@ -97,7 +97,7 @@ class DogstatsdCollectorTests(TestCase):
             call(metric_name, 1, tags=tags2),
             call(metric_name, 1, tags=tags3),
         ], any_order=True)
-    
+
     def test_multiple_increment_with_multiple_tags(self):
         metric_name = 'my.metric'
         tags1 = ['tag1:value1']
@@ -257,7 +257,7 @@ class DogstatsdCollectorTests(TestCase):
             call(metric_name, 1, tags=tags2),
             call(metric_name, 1, tags=tags3),
         ], any_order=True)
-    
+
     def test_multiple_histogram_with_multiple_tags(self):
         metric_name = 'my.metric'
         tags1 = ['tag1:value1']
