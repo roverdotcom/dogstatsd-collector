@@ -225,7 +225,7 @@ Same as above, but over a Celery task.
     
     @task_prerun.connect
     def init_metrics(task_id, task, *args, **kwargs):
-        task.request.metrics = DogstatsdCollector(DogStatsd())
+        task.request.metrics = DogstatsdCollector(dogstatsd)
     
     @task_postrun.connect
     def flush_metrics(task_id, task, *args, **kwargs):
@@ -261,7 +261,8 @@ Emit a set of metrics for a particular function you execute.
 Thread Safety
 =============
 
-The DogstatsdCollector singleton is **not threadsafe.** Do not share a single DogstatsdCollector object among multiple threads.
+The ``DogstatsdCollector`` singleton is **not threadsafe.** Do not share a
+single ``DogstatsdCollector`` object among multiple threads.
 
 More Documentation
 ==================
