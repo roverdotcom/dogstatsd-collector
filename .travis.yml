@@ -29,9 +29,6 @@ matrix:
     - python: '3.7'
       env:
         - TOXENV=py37
-    - python: 'check'
-      env:
-        - TOXENV=check
     - python: 'report'
       env:
         - TOXENV=report
