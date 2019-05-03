@@ -47,12 +47,16 @@ Overview
 
 .. end-badges
 
-`dogstatsd-collector` is a library to make it easy to collect DataDog-style
-StatsD counters and histograms with tags and control when they are flushed. It
-gives you a drop-in wrapper for the DogStatsD library for counters and
+``dogstatsd-collector`` is a library to make it easy to collect DataDog-style
+StatsD `counters <https://docs.datadoghq.com/developers/dogstatsd/data_types/#counters>`_
+and `histograms <https://docs.datadoghq.com/developers/dogstatsd/data_types/#histograms>`_
+with tags and control when they are flushed. It
+gives you a drop-in wrapper for the `DogStatsD
+<https://docs.datadoghq.com/developers/dogstatsd/>`_ library for counters and
 histograms and allows you to defer flushing the metrics until you choose to. This
 capability enables you to collect StatsD metrics at arbitrary granularity, for
-example on a per-web request or per-job basis.
+example on a per-web request or per-job basis (instead of the per-flush
+interval basis).
 
 Counters and histograms are tracked separately for each metric series (unique
 set of tag key-value pairs) and a single metric is emitted for each series when
@@ -77,7 +81,7 @@ Imagine you want to track a distribution of the number of queries issued by
 requests to your webapp, and tag them by which database is queried and which
 verb is used. You collect the following metrics as you issue your queries:
 
-::
+.. code-block:: python
 
     collector = DogstatsdCollector(dogstatsd)
     ...
@@ -88,14 +92,16 @@ verb is used. You collect the following metrics as you issue your queries:
     collector.histogram('query', tags=['database:replica','verb:select'])
 
 Then, at the end of your web request, when you flush the collector, the
-following metrics will be pushed to DogStatsD:
+following metrics will be pushed to ``DogStatsD`` (`shown in DogStatsD datagram
+format
+<https://docs.datadoghq.com/developers/dogstatsd/datagram_shell/#datagram-format>`_):
 
-::
+.. code-block:: python
 
     collector.flush()
-    # 'query,1,database:master|verb:insert'
-    # 'query,2,database:master|verb:update'
-    # 'query,2,database:replica|verb:select'
+    # query:1|h|#database:master,verb:insert
+    # query:2|h|#database:master,verb:update
+    # query:2|h|#database:replica,verb:select
 
 Motivation
 ==========
@@ -127,11 +133,14 @@ your metrics (such as aggregating/slicing in DataDog).
 Patterns
 ========
 
-The ``DogstatsdCollector`` object is a singleton that provides an identical
-interface as the DogStatsD ``increment`` and ``histogram`` methods. As you
-invoke these methods, you collect counters and histograms for each series
-(determined by any tags you include). After calling ``flush()``, each series is
-separately emitted as a StatsD metric.
+The ``DogstatsdCollector`` object is a singleton that provides a similar
+interface as the ``DogStatsD`` `increment
+<https://datadogpy.readthedocs.io/en/latest/#datadog.dogstatsd.base.DogStatsd.increment>`_
+and `histogram
+<https://datadogpy.readthedocs.io/en/latest/#datadog.dogstatsd.base.DogStatsd.histogram>`_
+methods. As you invoke these methods, you collect counters and histograms for
+each series (determined by any tags you include). After calling ``flush()``,
+each series is separately emitted as a StatsD metric.
 
 Simple Request Metrics
 ----------------------
@@ -141,30 +150,118 @@ request to get per-request granularity.
 
 In Django:
 
-TODO
+.. code-block:: python
+
+    from datadog.dogstatsd.base import DogStatsd
+    from dogstatsd_collector import DogstatsdCollector
+    
+    # Middleware
+    class MetricsMiddleware:
+        def __init__(self, get_response):
+            self.get_response = get_response
+            self.dogstatsd = DogStatsd()
+    
+        def __call__(self, request):
+            request.metrics = DogstatsdCollector(self.dogstatsd)
+            response = self.get_response(request)
+            request.metrics.flush()
+    
+            return response
+    
+    # Inside a view
+    def my_view(request):
+        # Do some stuff...
+        request.metrics.increment('my.count')
+        request.metrics.histogram('my.time', 0.5)
+        return HttpResponse('ok')
 
 In Flask:
 
-TODO
+.. code-block:: python
+
+    from datadog.dogstatsd.base import DogStatsd
+    from dogstatsd_collector import DogstatsdCollector
+    
+    from flask import Flask
+    from flask import request
+    
+    app = Flask(__name__)
+    dogstatsd = DogStatsd()
+    
+    @app.before_request
+    def init_metrics():
+        request.metrics = DogstatsdCollector(dogstatsd)
+    
+    @app.after_request
+    def flush_metrics():
+        request.metrics.flush()
+    
+    @app.route('/')
+    def my_view():
+        # Do some stuff...
+        request.metrics.increment('my.count')
+        request.metrics.histogram('my.time', 0.5)
+        return 'ok'
+
 
 Celery Task Metrics
 -------------------
 
 Same as above, but over a Celery task.
 
-TODO
+.. code-block:: python
 
+    from datadog.dogstatsd.base import DogStatsd
+    from dogstatsd_collector import DogstatsdCollector
+    
+    from celery import Celery
+    from celery import current_task
+    from celery.signals import task_prerun
+    from celery.signals import task_postrun
+    
+    app = Celery('tasks', broker='pyamqp://guest@localhost//')
+    
+    dogstatsd = DogStatsd()
+    
+    @task_prerun.connect
+    def init_metrics(task_id, task, *args, **kwargs):
+        task.request.metrics = DogstatsdCollector(DogStatsd())
+    
+    @task_postrun.connect
+    def flush_metrics(task_id, task, *args, **kwargs):
+        task.request.metrics.flush()
+    
+    @app.task
+    def my_task():
+        # Do some stuff...
+        current_task.request.metrics.increment('my.count')
+        current_task.request.metrics.histogram('my.time', 0.5)
+    
 Metrics Within a Function
 -------------------------
 
 Emit a set of metrics for a particular function you execute.
 
-TODO
+.. code-block:: python
+
+    from datadog.dogstatsd.base import DogStatsd
+    from dogstatsd_collector import DogstatsdCollector
+    
+    dogstatsd = DogStatsd()
+    
+    def do_stuff(metrics):
+        # Do some stuff...
+        metrics.increment('my.count')
+        metrics.histogram('my.time', 0.5)
+    
+    metrics = DogstatsdCollector(dogstatsd)
+    do_stuff(metrics)
+    metrics.flush()
 
 Thread Safety
 =============
 
-The DogstatsdCollector singleton is **not threadsafe.** TODO
+The DogstatsdCollector singleton is **not threadsafe.** Do not share a single DogstatsdCollector object among multiple threads.
 
 More Documentation
 ==================
