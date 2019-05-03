@@ -1,6 +1,7 @@
 from unittest import TestCase
-from unittest.mock import call
-from unittest.mock import MagicMock
+
+from mock import MagicMock
+from mock import call
 
 from dogstatsd_collector import DogstatsdCollector
 
