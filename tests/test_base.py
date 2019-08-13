@@ -20,6 +20,16 @@ class DogstatsdCollectorTests(TestCase):
         self.assertTrue(hasattr(self.collector, '_increments'))
         self.assertEqual(self.collector._increments, {})
 
+    def test_ctor_initializes_base_tags_when_not_specified(self):
+        self.assertTrue(hasattr(self.collector, 'base_tags'))
+        self.assertEqual(self.collector.base_tags, [])
+
+    def test_ctor_initializes_base_tags_when_specified(self):
+        expected_tags = ['tag:value']
+        collector = DogstatsdCollector(self.dogstatsd, base_tags=expected_tags)
+        self.assertTrue(hasattr(collector, 'base_tags'))
+        self.assertEqual(collector.base_tags, expected_tags)
+
     def test_single_increment_without_tags(self):
         metric_name = 'my.metric'
         self.collector.increment(metric_name)
@@ -35,6 +45,20 @@ class DogstatsdCollectorTests(TestCase):
         self.collector.flush()
         self.dogstatsd.increment.assert_has_calls([
             call(metric_name, 1, tags=tags)
+        ], any_order=True)
+
+    def test_increment_with_base_tags(self):
+        base_tags = ['basetag:basevalue']
+        collector = DogstatsdCollector(self.dogstatsd, base_tags=base_tags)
+        metric_name = 'my.metric'
+        tags = ['tag1:value1']
+        collector.increment(metric_name, tags=tags)
+        collector.flush()
+
+        expected_tags = sorted(tags + base_tags)
+
+        self.dogstatsd.increment.assert_has_calls([
+            call(metric_name, 1, tags=expected_tags)
         ], any_order=True)
 
     def test_increment_supports_specified_value(self):
@@ -215,6 +239,20 @@ class DogstatsdCollectorTests(TestCase):
         self.collector.flush()
         self.dogstatsd.histogram.assert_has_calls([
             call(metric_name, 3, tags=['tag1:value1'])
+        ], any_order=True)
+
+    def test_histogram_with_base_tags(self):
+        base_tags = ['basetag:basevalue']
+        collector = DogstatsdCollector(self.dogstatsd, base_tags=base_tags)
+        metric_name = 'my.metric'
+        tags = ['tag1:value1']
+        collector.histogram(metric_name, 1, tags=tags)
+        collector.flush()
+
+        expected_tags = sorted(tags + base_tags)
+
+        self.dogstatsd.histogram.assert_has_calls([
+            call(metric_name, 1, tags=expected_tags)
         ], any_order=True)
 
     def test_histogram_with_multiple_values_for_one_tag(self):

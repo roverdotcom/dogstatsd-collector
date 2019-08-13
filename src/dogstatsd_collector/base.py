@@ -9,12 +9,16 @@ class DogstatsdCollector(object):
 
     :type dogstatsd: datadog.dogstatsd.base.DogStatsD
     :param dogstatsd: The DogStatsD object to use for emitting metrics.
+
+    :type base_tags: list
+    :param base_tags: A list of tags to be included on every metric emitted from
+                      the collector. Should be of the form ['tag:value', ...]
     """
 
     #: The DogStatsD metrics supported by the collector.
     SUPPORTED_DOGSTATSD_METRICS = ['histogram', 'increment']
 
-    def __init__(self, dogstatsd):
+    def __init__(self, dogstatsd, base_tags=None):
         self.dogstatsd = dogstatsd
         for metric in self.SUPPORTED_DOGSTATSD_METRICS:
             setattr(
@@ -22,6 +26,9 @@ class DogstatsdCollector(object):
                 '_{}s'.format(metric),
                 defaultdict(lambda: defaultdict(float))
             )
+        if base_tags is None:
+            base_tags = []
+        self.base_tags = base_tags
 
     def increment(self, metric, value=1, tags=None):
         """
@@ -48,7 +55,9 @@ class DogstatsdCollector(object):
         dogstatsd_method = getattr(self.dogstatsd, metric_type)
         for metric, series in container.items():
             for series, value in series.items():
-                dogstatsd_method(metric, value, tags=sorted(list(series)))
+                series = list(series)
+                series.extend(self.base_tags)
+                dogstatsd_method(metric, value, tags=sorted(series))
 
     def _record_metric(self, metric_type, metric, value, tags=None):
         if tags is None:

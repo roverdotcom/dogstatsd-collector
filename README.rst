@@ -103,6 +103,22 @@ format
     # query:2|h|#database:master,verb:update
     # query:2|h|#database:replica,verb:select
 
+Base Tags
+---------
+
+The collector object also supports specifying a set of base tags, which will be
+included on every metric that gets emitted.
+
+.. code-block:: python
+
+    base_tags = ['mytag:myvalue']
+    collector = DogstatsdCollector(dogstatsd, base_tags=base_tags)
+    collector.histogram('query', tags=['database:master','verb:insert'])
+    collector.histogram('query', tags=['database:master','verb:update'])
+    collector.flush()
+    # query:1|h|#database:master,verb:insert,mytag:myvalue
+    # query:1|h|#database:master,verb:update,mytag:myvalue
+
 Motivation
 ==========
 
