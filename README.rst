@@ -32,9 +32,9 @@ Overview
     :alt: PyPI Package latest release
     :target: https://pypi.python.org/pypi/dogstatsd-collector
 
-.. |commits-since| image:: https://img.shields.io/github/commits-since/roverdotcom/dogstatsd-collector/v0.0.1.svg
+.. |commits-since| image:: https://img.shields.io/github/commits-since/roverdotcom/dogstatsd-collector/v0.1.0.svg
     :alt: Commits since latest release
-    :target: https://github.com/roverdotcom/dogstatsd-collector/compare/v0.0.1...master
+    :target: https://github.com/roverdotcom/dogstatsd-collector/compare/v0.1.0...master
 
 .. |wheel| image:: https://img.shields.io/pypi/wheel/dogstatsd-collector.svg
     :alt: PyPI Wheel

@@ -24,7 +24,7 @@ def read(*names, **kwargs):
 
 setup(
     name='dogstatsd-collector',
-    version='0.0.1',
+    version='0.1.0',
     license='BSD 3-Clause License',
     description="A library to enable collection and delayed emission of StatsD metrics using the DataDog protocol.",
     long_description='%s\n%s' % (
